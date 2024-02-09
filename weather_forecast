@@ -6,13 +6,56 @@ from datetime import datetime
 
 def get_weather():
     city = city_entry.get()
-    apikey = "1c2a2f5cc4e48a5b386de9c12542c828"
-    url = "http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
+    api_key = "1c2a2f5cc4e48a5b386de9c12542c828"
+    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
     response = requests.get (url)
     data = response.json()
 
     if data ["cod"] != "200":
         weather_text.delete(1.0, tk.END)
-        weather_text.insert
+        weather_text.insert(tk.END, "Error: City not Found.")
+        return
+    
+    forecast_text = f"Weather forecast for {city}: \n\n"
+    for forecast in data ["list"]:
+        local_time = datetime.strptime(forecast["dt_txt"], "%Y-%m-%d %H:%M:%S")
+        formatted_date = local_time.strftime("%A, %B %d, %Y")
+        formatted_time = local_time.strftime("%I, %M %p")
+        temperature = forecast["main"]["temp"]
+        weather_description = forecast["weather"][0]["description"]
+        forecast_text += f"Date: {formatted_date}\nTime: {formatted_time}\nTemperature: {temperature}°C\nWeather: {weather_description}\n\n"
 
+    weather_text.delete(1.0, tk.END)
+    weather_text.insert(tk.END, forecast_text)
 
+def search():
+    get_weather()
+
+root = tk.Tk()
+root.title("Weather App")
+root.geometry("500x400")
+style = Style(theme="morph")
+
+city_frame = tk.Frame(root)
+city_frame.pack(pady=10)
+
+city_label = ttk.Label (city_frame, text = "ENTER CITY: ", font="Arial, 12")
+city_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+
+city_entry = ttk.Entry(city_frame, font="Arial, 18")
+city_entry.grid(row=0, column=1, padx=5, pady=5)
+
+search_button = ttk.Button(city_frame, text="Search", command=search)
+search_button.grid(row=0, column=3, padx=5, pady=5)
+
+weather_frame = tk.Frame(root)
+weather_frame.pack(pady=20, padx=10, fill=tk.BOTH, expand=True)
+
+scrollbar = ttk.Scrollbar(weather_frame)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+weather_text = tk.Text(weather_frame, wrap="word", yscrollcommand=scrollbar.set, font="Arial, 14")
+weather_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+scrollbar.config(command=weather_text.yview)
+
+root.mainloop()
